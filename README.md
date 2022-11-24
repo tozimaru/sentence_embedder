@@ -26,7 +26,7 @@ The server has two endpoints for:
 1. Embedding sentences 
 
    address: `0.0.0.0:8000/process`  
-   receives: `{"text": string}`, returns: `{"embedding": numpy.ndarray}`
+   receives: `{"text": string}`, returns: `{"embedding": list}`
 
 3. Comparing two sentences with each other 
 
