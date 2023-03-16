@@ -31,29 +31,6 @@ def add_document(document: Document):
 
     return {"id": document_id}
 
-@app.post("/search_id_only/")
-def search_similar_sentences(query: Query):
-    embeddings = model.encode(query.sentences)
-    results = []
-
-    with engine.connect() as conn:
-        for sentence, embedding in zip(query.sentences, embeddings):
-            search_params = {"k": query.k, "embedding": str(embedding.tolist())}
-            search_query = "SELECT document_id, position, content, (embedding <=> vector(:embedding)) as distance FROM sentences"
-
-            if query.threshold is not None:
-                search_query += " WHERE (embedding <=> vector(:embedding)) <= :threshold"
-                search_params["threshold"] = query.threshold
-
-            search_query += " ORDER BY (embedding <=> vector(:embedding)) ASC LIMIT :k"
-
-            result = conn.execute(text(search_query), search_params)
-            similar_sentences = [{"document_id": row["document_id"], "position": row["position"], "content": row["content"], "distance": row["distance"]} for row in result]
-
-            results.append({"input_sentence": sentence, "similar_sentences": similar_sentences})
-
-    return results
-
 @app.post("/search/")
 def search_similar_sentences_meta(query: Query):
     embeddings = model.encode(query.sentences)
