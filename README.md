@@ -26,7 +26,7 @@ Currently tested on, and uses a pre-trained model ('paraphrase-multilingual-mpne
 Refer to `schema.sql` for database details. `.env` file should contain your db details.
 
 To run the server:
-`uvicorn main:app --host 0.0.0.0 --port 8000`
+`uvicorn document_embedder_api:app --host 0.0.0.0 --port 8000`
 
 ### API Endpoints
 
