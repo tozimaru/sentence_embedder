@@ -1,7 +1,7 @@
 # sentence_embedder
 
 ## Sentence to embedding API demo for plagiarism detection.
-Currently tested on, and uses a pre-trained model ('paraphrase-multilingual-mpnet-base-v2') from huggingface. Most plagiarized sentences have cosine distance less than **0.1**. Most sentences that are about similar topics, but nonetheless non-plagiarized, had cosine distance of about **0.5** or more.
+Currently tested on, and uses a pre-trained model ('paraphrase-multilingual-mpnet-base-v2') from huggingface. Most plagiarized sentences have cosine distance less than **0.3**. Exact matches have a positive value very close to **0**. Most sentences that are about similar topics, but nonetheless non-plagiarized, had cosine distance of about **0.5** or more.
 
 ### Pre-requisites
 * CUDA 10.2
@@ -10,33 +10,59 @@ Currently tested on, and uses a pre-trained model ('paraphrase-multilingual-mpne
 * Pytorch 1.12.1
 * sentence_transformers 2.2.2
 * transformers 4.23.1
-* scipy
 * numpy
-* scikit-learn
-* flask
+* FastAPI
+* uvicorn
 
 *The code may work on other versions of torch/transformers. The specified version are merely the latest tested versions.*
 
+### DB requirement
+
+- PostgreSQL 12 or higher
+- [pgvector extension](https://github.com/pgvector/pgvector)
+
 ### Usage
-Local server can be turned on `localhost:8000` by running `convert_database.py`. For local usage, plain flask server should work fine. 
 
-Turn on: `python convert_database.py`. API could be sped up by using a different backend for the server such as gunicorn. In such case, you may use: `gunicorn --workers <NUM_OF_WORKERS> --bind 0.0.0.0:8000 convert_database:app`
+Refer to `schema.sql` for database details. `.env` file should contain your db details.
 
-The server has two endpoints for: 
-1. Embedding sentences 
+To run the server:
+`uvicorn main:app --host 0.0.0.0 --port 8000`
 
-   address: `0.0.0.0:8000/process`  
-   receives: `{"text": string}`, returns: `{"embedding": list}`
+### API Endpoints
 
-3. Comparing two sentences with each other 
+`POST /insert/`: Insert a document into the database. Each document should be a JSON object containing the content, title (optional), author (optional), written year (optional) and document type (required) of the document. For now the API splits the sentences jsut by `.`. This should be improved for future use.
 
-   address: `0.0.0.0:8000/compare`  
-   recieves: `{"text": string}`, returns: `{"distance": float}` (make sure to put a period after each sentence.)
+Example request payload:
+
+```json
+{
+    "content": "We present a neural network structure, ControlNet, to control pretrained large diffusion models to support additional input conditions. The ControlNet learns task-specific conditions in an end-to-end way, and the learning is robust even when the training dataset is small (< 50k)",
+    "title": "Controlnet paper",
+    "author": "Control N. Paper",
+    "written_year": 2023,
+    "document_type": "ai research"
+}
+```
+
+`POST /search/`: Search for similar sentences. The request payload should include a list of sentences, the number of top-k results to return, and an optional cosine similarity threshold.
+
+Example request payload:
+
+```json
+{
+    "sentences": [
+        "This is a test sentence."
+    ],
+    "k": 5,
+    "threshold": 0.7
+}
+```
+### Client
+The client.py script demonstrates how to interact with the API server. The script inserts sample documents into the database and searches for similar sentences using the /search/ endpoint. 
 
 ### TODO
 
-* Train/finetune a new model with proprietary data.
-* Batch processing
-* Establish clear cosine distance threshold based on real world data
+* Better sentence tokenizing technique.
+* Create embedding index, something like: `CREATE INDEX ON sentences USING ivfflat (embedding vector_cosine_ops);`
 
 
